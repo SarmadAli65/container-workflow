@@ -1,0 +1,35 @@
+name: Container image workflow
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v2
+
+    - name:
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESSKEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    
+    - name: log in to ECR
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY}}
+
+    - name: build image
+      run: |
+        cd task1
+        docker build -t ${{ ECR_REPOSITORY }} .
+      
+    - name: tag image
+      run: |
+        docker tag ${{ ECR_REPOSITORY }}:latest ${{ ECR_REPOSITORY }}:latest
+    
+    - name: push image
+      run: |
+        docker push ${{ ECR_REPOSITORY }}:latest
+        
